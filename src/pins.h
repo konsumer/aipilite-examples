@@ -1,6 +1,7 @@
 // Must be HIGH at boot
 #define PIN_PWR_CTL  10
 
+#define PIN_RGB_LED 46
 #define PIN_LCD_CLK  16
 #define PIN_LCD_MOSI 17
 #define PIN_LCD_DC   7

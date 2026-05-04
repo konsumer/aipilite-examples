@@ -33,8 +33,7 @@ esptool -b 460800 write-flash 0 aipi_lite_backup.bin
 
 This is sometimes needed to program it, and it's a bit tricky. The screen will stay black, when it's working.
 
-- SOmetimes you can get it into this mode by just unplugging it, and quickly plugging and programming it (`pio run -t upload -e display`)
-
+- Sometimes you can get it into this mode by just unplugging it, and quickly plugging and programming it (`pio run -t upload -e display`)
 - Remove 4 screws on the back of the device, then press the button under the display while plugging the device into a USB port.
 
 

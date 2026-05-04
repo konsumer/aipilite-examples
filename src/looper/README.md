@@ -1,4 +1,4 @@
-This tests audio. It's a looper. Hold down button A to reocrd, and it will loop it.
+This tests sound. Press left button to record, and right to play.
 
 ```sh
 # build & upload

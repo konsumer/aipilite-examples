@@ -1,4 +1,4 @@
-This just tests the screen and 2 buttons on the face.
+This tests the screen and 2 buttons on the face.
 
 ```sh
 # build & upload
