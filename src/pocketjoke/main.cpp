@@ -251,32 +251,6 @@ bool fetchJoke() {
     }
 }
 
-
-// BTN_A: next page; on last page, sleeps. GPIO42 (BTN_B) omitted — JTAG drives it HIGH via USB.
-void runJokeViewer() {
-    if (!fetchJoke()) return;
-    displayCurrentPage();
-
-    unsigned long last_print = 0;
-    while (true) {
-        int a = digitalRead(PIN_BTN_A);
-        if (millis() - last_print > 1000) {
-            Serial.printf("loop BTN_A=%d page=%d/%d\n", a, current_page, total_pages);
-            last_print = millis();
-        }
-        if (a == LOW) {
-            delay(200); // debounce
-            if (current_page + 1 < total_pages) {
-                current_page++;
-                displayCurrentPage();
-            } else {
-                return; // last page — fall through to enterDeepSleep
-            }
-        }
-        delay(30);
-    }
-}
-
 void handlePortalRoot() {
     // 1. Scan for nearby networks
     int n = WiFi.scanNetworks();
@@ -385,14 +359,45 @@ void startCaptivePortal() {
     }
 }
 
+
+// BTN_A: next page; last page sleeps. BTN_B (held): enter config anytime.
+void runJokeViewer() {
+    if (!fetchJoke()) return;
+    displayCurrentPage();
+
+    // Wait for wakeup button to release before handling new presses
+    while (digitalRead(PIN_BTN_A) == LOW) delay(10);
+    delay(50);
+
+    while (true) {
+        if (digitalRead(PIN_BTN_B) == LOW) {
+            delay(200); // debounce
+            if (digitalRead(PIN_BTN_B) == LOW) {
+                startCaptivePortal();
+            }
+        }
+        if (digitalRead(PIN_BTN_A) == LOW) {
+            delay(50); // debounce
+            if (digitalRead(PIN_BTN_A) != LOW) { delay(30); continue; }
+            while (digitalRead(PIN_BTN_A) == LOW) delay(10); // wait for release
+            if (current_page + 1 < total_pages) {
+                current_page++;
+                displayCurrentPage();
+            } else {
+                return; // last page — fall through to enterDeepSleep
+            }
+        }
+        delay(30);
+    }
+}
+
 void enterDeepSleep() {
     showMessage("Going to sleep...");
     delay(800);
     gfx->displayOff();
 
-    // BTN_B (GPIO42) omitted — JTAG drives it HIGH via USB, causing immediate wake
-    uint64_t pin_mask = (1ULL << PIN_BTN_A);
-    esp_sleep_enable_ext1_wakeup(pin_mask, ESP_EXT1_WAKEUP_ANY_LOW);
+    // BTN_B (GPIO 42) is not RTC-capable on ESP32-S3 — EXT1 requires RTC GPIO (0-21)
+    esp_sleep_enable_ext1_wakeup(1ULL << PIN_BTN_A, ESP_EXT1_WAKEUP_ANY_LOW);
     esp_deep_sleep_start();
 }
 
@@ -426,8 +431,13 @@ void setup() {
     Serial.printf("reset_reason=%d from_deep_sleep=%d wakeup_reason=%d BTN_A=%d BTN_B=%d\n",
         reset_reason, from_deep_sleep, wakeup_reason, digitalRead(PIN_BTN_A), digitalRead(PIN_BTN_B));
 
-    // No raw BTN_B check here — GPIO42 is MTMS (JTAG) and stays HIGH while USB is connected.
-    // Config mode is only entered via EXT1 deep-sleep wakeup (user held B to wake the device).
+    if (digitalRead(PIN_BTN_B) == LOW) {
+        delay(200);
+        if (digitalRead(PIN_BTN_B) == LOW) {
+            Serial.println("-> config (BTN_B held at boot)");
+            startCaptivePortal();
+        }
+    }
 
     if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT1) {
         uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
