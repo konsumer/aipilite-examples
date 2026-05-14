@@ -42,10 +42,13 @@ void setup() {
   pinMode(PIN_PWR_CTL, OUTPUT);
   digitalWrite(PIN_PWR_CTL, HIGH);
 
-  Serial.begin(115200);
+  pinMode(PIN_BTN_A, INPUT_PULLUP);
+  pinMode(PIN_BTN_B, INPUT_PULLUP);
 
   pinMode(PIN_LCD_BL, OUTPUT);
   digitalWrite(PIN_LCD_BL, HIGH);
+
+  Serial.begin(115200);
 
   gfx->begin();
   gfx->fillScreen(RGB565_BLACK);
@@ -53,9 +56,6 @@ void setup() {
   gfx->setTextSize(2);
   gfx->setCursor(10, 20);
   gfx->println("AIPI-Lite");
-
-  pinMode(PIN_BTN_A, INPUT_PULLUP);
-  pinMode(PIN_BTN_B, INPUT_PULLUP);
 
   drawButtons();
 }

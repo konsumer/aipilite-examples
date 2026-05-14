@@ -59,6 +59,15 @@ void drawBattery(float volts, int pct) {
     }
 }
 
+void drawBg() {
+    gfx->fillScreen(RGB565_BLACK);
+    gfx->setTextColor(RGB565_WHITE);
+    gfx->setTextSize(1);
+    gfx->setCursor(4, 4);
+    gfx->println("AIPI-Lite Battery");
+    gfx->drawFastHLine(0, 16, 128, RGB565_WHITE);
+}
+
 void goToSleep() {
     gfx->fillScreen(RGB565_BLACK);
     gfx->setTextColor(RGB565_WHITE);
@@ -67,7 +76,16 @@ void goToSleep() {
     gfx->println("Sleeping...");
     gfx->setCursor(10, 70);
     gfx->println("Press A to wake");
-    delay(1000);
+
+    // delay a second, but allow button to cancel
+    int t = millis();
+    while (millis() - t < 1000) {
+        if (digitalRead(PIN_BTN_A) == LOW) {
+            lastActivity = millis();
+            drawBg();
+            return;
+        }
+    }
 
     digitalWrite(PIN_LCD_BL, LOW);
 
@@ -95,12 +113,7 @@ void setup() {
     digitalWrite(PIN_LCD_BL, HIGH);
 
     gfx->begin();
-    gfx->fillScreen(RGB565_BLACK);
-    gfx->setTextColor(RGB565_WHITE);
-    gfx->setTextSize(1);
-    gfx->setCursor(4, 4);
-    gfx->println("AIPI-Lite Battery");
-    gfx->drawFastHLine(0, 16, 128, RGB565_WHITE);
+    drawBg();
 
     // 12dB attenuation gives full 0–3.3V ADC input range
     analogSetPinAttenuation(PIN_BAT_ADC, ADC_11db);
